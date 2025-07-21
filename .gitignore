@@ -5,3 +5,6 @@ _site
 .jekyll-cache
 site
 top_users_data.json
+.env
+.idea/
+Gemfile.lock

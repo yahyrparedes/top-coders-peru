@@ -2,6 +2,8 @@ require 'net/http'
 require 'uri'
 require 'json'
 require 'uri'
+require 'dotenv'
+Dotenv.load
 
 module Jekyll
     class TopUsersTag < Liquid::Tag
@@ -31,6 +33,7 @@ module Jekyll
         end
 
         def percentile(values, percentile)
+            p values
             values_sorted = values.sort
             k = (percentile*(values_sorted.length-1)+1).floor - 1
             f = (percentile*(values_sorted.length-1)+1).modulo(1)
@@ -76,7 +79,8 @@ module Jekyll
                 p "Error: #{repos}"
             end
             counter = 0
-            if repos["total_count"] > 0
+            total_count = repos["total_count"] || 0
+            if total_count > 0
                 repos["items"].each do |repo|
                     counter += (repo["stargazers_count"].to_i)
                 end
@@ -168,7 +172,35 @@ module Jekyll
 
             if File.exist?("top_users_data.json")
                 data = JSON.parse(open("top_users_data.json").read())
-                @top_users      = data["users"]
+                p "Using cached top users data"
+                top_users = []
+                data["users"].each do |user|
+                    data        = getUserData(user["login"])
+                    commits     = countContributions(user["login"])
+                    stars       = countStarts(user["login"])
+                    followers   = data["followers"]
+                    prs         = countPRs(user["login"])
+
+                    # Filtrar organizaciones explícitamente
+                    next if data["type"] == "Organization"
+
+                    p data["name"]
+
+                    top_users << {
+                      "id" => user["login"],
+                      "pic" => data["avatar_url"],
+                      "name" => data["name"],
+                      "email" => data["email"],
+                      "company" => data["company"],
+                      "followers" => followers,
+                      "repos" => data["public_repos"],
+                      "url" => data["html_url"],
+                      "commits" => commits,
+                      "stars" => stars,
+                      "prs" => prs
+                    }
+                end
+                @top_users = top_users
             else
                 @top_users = getEachUserData
             end
