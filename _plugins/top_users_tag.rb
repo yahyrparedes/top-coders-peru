@@ -164,7 +164,7 @@ module Jekyll
       if File.exist?("top_users_data.json")
         data = JSON.parse(open("top_users_data.json").read())
         p "Using cached top users data"
-        @top_users = data
+        @top_users = data["users"]
       else
         if File.exist?("top_friends.json")
           data = JSON.parse(open("top_friends.json").read())
